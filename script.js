@@ -1,0 +1,3 @@
+
+
+const dom = new DocumentModel();
