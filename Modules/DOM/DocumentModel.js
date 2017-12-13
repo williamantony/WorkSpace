@@ -17,6 +17,7 @@ class DocumentModel {
   init() {
 
     this.setRoot();
+
     this.syncElements();
     
     this.map = this.createMap();
@@ -85,70 +86,43 @@ class DocumentModel {
 
   }
 
-  
-  createMap(element) {
-    
-    // if element not defined use root element
-    element = element || this.root;    
+  createMap(element, cloned = false) {
 
-    const documentMap = [];
+    element = element || this.root;
 
-    // Flags
-    let rangeStart = false;
-    let rangeEnd = false;
-    
-    for (let i = 0; i < this.elements.length; i++) {
+    element = (cloned) ? element.cloneNode(true) : element;
 
-      // Stops For Loop
-      if (rangeEnd) return documentMap;
+    const elementNodes = element.querySelectorAll("*");
 
-      if (this.elements[i].element === element) {
-        // Range Starts on the first matched element
-        rangeStart = true;
-      }
+    return (elementNodes);
 
-      if (rangeStart) {
-        // if RangeStart is set to true
-
-        if (this.elements[i].element !== element) {
-          
-          if (!this.elements[i].isChild(element)) {
-            // Range Ends on the last child of element
-            rangeEnd = true;
-          }
-          
-          // Other Process Goes Here
-          documentMap.push(this.elements[i].element);
-
-        }
-
-      }
-      
-      // End of For Loop
-    }
-
-    // Return the Map
-    return documentMap;
-    
-    // End of createMap Method
   }
 
   renderMap(element) {
     
     // if element not defined use root element
     element = element || this.root;
-
-    // update map
-    // this.map = this.createMap(element);
     
-    const elementClone = element.cloneNode(true);
-
-    const elementMap = this.createMap(elementClone);
+    const elementMap = this.createMap(element.parentElement, true);
     
-    console.log(elementClone);
-    console.log(elementMap);
+    const documentMap = document.createElement("div");
+    documentMap.id = (__WorkSpace__.id + "-map");
+    
+    const firstElementChildren = Array.from(elementMap[0].children);
 
-    return elementMap;
+    for (let i = 0; i < firstElementChildren.length; i++) {
+
+      documentMap.appendChild(firstElementChildren[i]);
+
+    }
+    
+    document.body.appendChild(documentMap);
+
+    for (let i = 0; i < elementMap.length; i++) {
+
+      new DocumentElement(elementMap[i]).resetStyles();
+      
+    }
 
   }
 

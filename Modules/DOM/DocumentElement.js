@@ -86,4 +86,18 @@ class DocumentElement {
 
   }
 
+  resetStyles() {
+
+    const styles = Array.from(this.element.style);
+
+    for (let i = 0; i < styles.length; i++) {
+
+      this.element.style[toCamelCase(styles[i])] = "";
+
+    }
+
+    this.element.removeAttribute("style");
+    
+  }
+
 }
