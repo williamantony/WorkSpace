@@ -1,5 +1,3 @@
-
-
-window.__WorkSpace__ = new WorkSpace("virtual-dom");
+const __WorkSpace__ = new WorkSpace("workSpace");
 
 console.log(__WorkSpace__);
