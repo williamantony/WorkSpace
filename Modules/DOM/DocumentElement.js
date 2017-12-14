@@ -100,4 +100,16 @@ class DocumentElement {
     
   }
 
+  toJSON() {
+
+    const json = {};
+
+    json.styles = {};
+
+    console.log(this.computedStyle);
+
+    // for (let i = 0; i < this.element.)
+
+  }
+
 }

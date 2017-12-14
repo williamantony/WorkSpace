@@ -6,6 +6,8 @@ class Page {
 
     this.document = new DocumentModel(this.id);
 
+    this.documentMap = new DocumentMap(this.document.root);
+
   }
 
 }

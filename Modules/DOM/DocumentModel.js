@@ -8,8 +8,6 @@ class DocumentModel {
 
     this.elements = [];
 
-    this.map = null;
-
     this.init();
 
   }
@@ -19,8 +17,6 @@ class DocumentModel {
     this.setRoot();
 
     this.syncElements();
-    
-    this.map = this.createMap();
 
   }
 
@@ -83,46 +79,6 @@ class DocumentModel {
     
     // Replace old list with new list
     this.elements = elements;
-
-  }
-
-  createMap(element, cloned = false) {
-
-    element = element || this.root;
-
-    element = (cloned) ? element.cloneNode(true) : element;
-
-    const elementNodes = element.querySelectorAll("*");
-
-    return (elementNodes);
-
-  }
-
-  renderMap(element) {
-    
-    // if element not defined use root element
-    element = element || this.root;
-    
-    const elementMap = this.createMap(element.parentElement, true);
-    
-    const documentMap = document.createElement("div");
-    documentMap.id = (__WorkSpace__.id + "-map");
-    
-    const firstElementChildren = Array.from(elementMap[0].children);
-
-    for (let i = 0; i < firstElementChildren.length; i++) {
-
-      documentMap.appendChild(firstElementChildren[i]);
-
-    }
-    
-    document.body.appendChild(documentMap);
-
-    for (let i = 0; i < elementMap.length; i++) {
-
-      new DocumentElement(elementMap[i]).resetStyles();
-      
-    }
 
   }
 

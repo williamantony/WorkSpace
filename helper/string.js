@@ -10,3 +10,9 @@ const toCamelCase = (string) => {
   return returnStr;
 
 };
+
+const toShuffledString = (string, length) => {
+
+  
+
+};
