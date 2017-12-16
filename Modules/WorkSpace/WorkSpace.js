@@ -1,5 +1,3 @@
-
-
 class WorkSpace extends Project {
 
   constructor(id) {
@@ -12,6 +10,8 @@ class WorkSpace extends Project {
     this.currentProjectIndex = 0;
     
     // Initialize
+    console.info("Move 'currentProjectIndex' to window.localStorage");
+    console.info("Move 'currentPageIndex' to window.localStorage");
     
   }
     

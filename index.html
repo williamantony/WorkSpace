@@ -8,23 +8,25 @@
 
   <script src="./helper/import.js" defer></script>
   <script src="./helper/string.js" defer></script>
-
-<!-- 
-  <script src="./Modules/DOM/DocumentModel.js" defer></script>
-  <script src="./Modules/DOM/DocumentElement.js" defer></script>
-  <script src="./Modules/DOM/DocumentMap.js" defer></script>
--->
+  
+  <script src="./Modules/DOM/Element.js" defer></script>
+  <script src="./Modules/DOM/Model.js" defer></script>
 
   <script src="./Modules/WorkSpace/Page/Page.js" defer></script>
   <script src="./Modules/WorkSpace/Project/Project.js" defer></script>
   <script src="./Modules/WorkSpace/WorkSpace.js" defer></script>
+
+  <script src="./Modules/UI/Drag.js" defer></script>
+  <script src="./Modules/UI/Resize.js" defer></script>
   
   <script src="./script.js" defer></script>
+
+  <link rel="stylesheet" href="./index.css">
   
 </head>
 <body>
 
-  <div id="virtual-dom_P1_p1-root" style="color: #000;">
+  <div id="workspace-dom" style="color: #000;">
     
     <div class="item-1" style="color: #000;">
       <div class="item__child-1">
@@ -35,6 +37,18 @@
     </div>
     <div class="item-2"></div>
 
+  </div>
+
+  <div id="workspace-resizer">
+    <div class="resize-border-point horizontal top"></div>
+    <div class="resize-border-point horizontal bottom"></div>
+    <div class="resize-border-point vertical left"></div>
+    <div class="resize-border-point vertical right"></div>
+    
+    <div class="resize-corner-point topleft"></div>
+    <div class="resize-corner-point topright"></div>
+    <div class="resize-corner-point bottomleft"></div>
+    <div class="resize-corner-point bottomright"></div>
   </div>
 
 
