@@ -7,7 +7,7 @@ class Resizer {
 
     // Initialize
     this.init();
-    
+
   }
 
   init() {
@@ -190,8 +190,10 @@ class Resizer {
 
     // if resize is turned Off
     if (!this.status) {
+
       // exit by returning undefined
       return undefined;
+      
     }
   
     // for newer browsers
@@ -202,16 +204,21 @@ class Resizer {
     // for older browsers
     // if event.movementX is undefined
     if (event.movementX === undefined){
+
+      // Calculate the change in movement
       xMovement = (event.pageX - this.delta.x);
       yMovement = (event.pageY - this.delta.y);
+
     }
 
     // for older browsers
     // if event.movementX is undefined
     if (event.movementX === undefined){
+
       // update the page X|Y
       this.delta.x = event.pageX;
       this.delta.y = event.pageY;
+
     }
     
     // If this.target is 'L'    
