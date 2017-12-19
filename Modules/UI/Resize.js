@@ -20,17 +20,16 @@ class Resizer {
     this.target = "";
 
     // the overlay template element
-    this.overlay = document.getElementById("workspace-resizer");
+    this.overlay = document.getElementById("workspace-resize-handle");
 
-    // manages offset properties of the element
-    this.offset = {};
-
-    // manages properties of the overlay template
-    this.layer = {};
-    this.layer.offset = {};
+    // manages offset properties
+    this.offset = {
+      element: {},
+      overlay: {}
+    };
 
     // margin is the space between the element and overlay template
-    this.layer.margin = 5;
+    this.offset.overlay.margin = 5;
 
     // Updates the offset properties
     // for both element and overlay template
@@ -64,16 +63,16 @@ class Resizer {
   updateOffset() {
 
     // Set Offset Properties of the Element
-    this.offset.x = this.element.offsetLeft;
-    this.offset.y = this.element.offsetTop;
-    this.offset.width = this.element.offsetWidth;
-    this.offset.height = this.element.offsetHeight;
+    this.offset.element.x = this.element.offsetLeft;
+    this.offset.element.y = this.element.offsetTop;
+    this.offset.element.width = this.element.offsetWidth;
+    this.offset.element.height = this.element.offsetHeight;
 
     // Set Offset Properties of the Overlay Template
-    this.layer.offset.x = this.offset.x - this.layer.margin - 3;
-    this.layer.offset.y = this.offset.y - this.layer.margin - 3;
-    this.layer.offset.width = this.offset.width + (this.layer.margin * 2);
-    this.layer.offset.height = this.offset.height + (this.layer.margin * 2);
+    this.offset.overlay.x = this.offset.element.x - this.offset.overlay.margin - 3;
+    this.offset.overlay.y = this.offset.element.y - this.offset.overlay.margin - 3;
+    this.offset.overlay.width = this.offset.element.width + (this.offset.overlay.margin * 2);
+    this.offset.overlay.height = this.offset.element.height + (this.offset.overlay.margin * 2);
 
   }
 
@@ -85,10 +84,10 @@ class Resizer {
       this.updateOffset();
 
       // Apply updated Offset properties
-      this.overlay.style.left = this.layer.offset.x + "px";
-      this.overlay.style.top = this.layer.offset.y + "px";
-      this.overlay.style.width = this.layer.offset.width + "px";
-      this.overlay.style.height = this.layer.offset.height + "px";
+      this.overlay.style.left = this.offset.overlay.x + "px";
+      this.overlay.style.top = this.offset.overlay.y + "px";
+      this.overlay.style.width = this.offset.overlay.width + "px";
+      this.overlay.style.height = this.offset.overlay.height + "px";
 
     }
 
@@ -225,12 +224,12 @@ class Resizer {
     if (new RegExp(/L/gi).test(this.target)) {
 
       // assign x offset to element and overlay template
-      this.offset.x += xMovement;
-      this.layer.offset.x += xMovement;
+      this.offset.element.x += xMovement;
+      this.offset.overlay.x += xMovement;
 
       // assign width offset to element and overlay template
-      this.offset.width += (-xMovement);
-      this.layer.offset.width += (-xMovement);  
+      this.offset.element.width += (-xMovement);
+      this.offset.overlay.width += (-xMovement);  
 
     }
 
@@ -238,8 +237,8 @@ class Resizer {
     if (new RegExp(/R/gi).test(this.target)) {
 
       // assign width offset to element and overlay template
-      this.offset.width += xMovement;
-      this.layer.offset.width += xMovement;
+      this.offset.element.width += xMovement;
+      this.offset.overlay.width += xMovement;
 
     }
     
@@ -247,30 +246,30 @@ class Resizer {
     if (new RegExp(/T/gi).test(this.target)) {
 
       // assign y offset to element and overlay template
-      this.offset.y += yMovement;
-      this.layer.offset.y += yMovement;
+      this.offset.element.y += yMovement;
+      this.offset.overlay.y += yMovement;
 
       // assign height to element and overlay template
-      this.offset.height += (-yMovement);
-      this.layer.offset.height += (-yMovement);
+      this.offset.element.height += (-yMovement);
+      this.offset.overlay.height += (-yMovement);
 
     }
     // If this.target is 'B'
     if (new RegExp(/B/gi).test(this.target)) {
 
       // assign height to element and overlay template
-      this.offset.height += yMovement;
-      this.layer.offset.height += yMovement;
+      this.offset.element.height += yMovement;
+      this.offset.overlay.height += yMovement;
 
     }
 
     // update position of the overlay template
-    this.overlay.style.left = this.layer.offset.x + "px";
-    this.overlay.style.top = this.layer.offset.y + "px";
+    this.overlay.style.left = this.offset.overlay.x + "px";
+    this.overlay.style.top = this.offset.overlay.y + "px";
 
     // update width/height of the overlay template
-    this.overlay.style.width = this.layer.offset.width + "px";
-    this.overlay.style.height = this.layer.offset.height + "px";
+    this.overlay.style.width = this.offset.overlay.width + "px";
+    this.overlay.style.height = this.offset.overlay.height + "px";
     
 
     // Get ComputerStyle
@@ -280,12 +279,12 @@ class Resizer {
     const marginTop = parseInt(computedStyle["marginTop"]);
 
     // update position of the element
-    this.element.style.left = (this.offset.x - marginLeft) + "px";
-    this.element.style.top = (this.offset.y - marginTop) + "px";
+    this.element.style.left = (this.offset.element.x - marginLeft) + "px";
+    this.element.style.top = (this.offset.element.y - marginTop) + "px";
 
     // update width/height of the element
-    this.element.style.width = this.offset.width + "px";
-    this.element.style.height = this.offset.height + "px";
+    this.element.style.width = this.offset.element.width + "px";
+    this.element.style.height = this.offset.element.height + "px";
 
   }
 
