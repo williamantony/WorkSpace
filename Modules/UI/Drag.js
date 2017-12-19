@@ -5,7 +5,8 @@ class Dragger {
     // Element on which Drag is applied
     this.element = element || null;
 
-    this.snap = true
+    // Snap Switch
+    this.snap = false;
 
     // Initialize
     this.init();
@@ -18,6 +19,15 @@ class Dragger {
     // switch for drag
     this.status = false;
 
+    // the overlay template element
+    this.overlay = document.getElementById("workspace-drag-handle");
+
+    // manages offset properties
+    this.offset = {
+      element: {},
+      overlay: {}
+    }
+
     // AddEventListeners
     this.applyEvents();
 
@@ -26,14 +36,16 @@ class Dragger {
   applyEvents() {
 
     // Mouse Events
-    this.element.addEventListener("mousedown", this.start.bind(this));
+    this.overlay.addEventListener("mousedown", this.start.bind(this));
+    document.documentElement.addEventListener("mousemove", this.renderOverlay.bind(this));
     document.documentElement.addEventListener("mousemove", this.move.bind(this));
     document.documentElement.addEventListener("mouseup", this.stop.bind(this));
 
     if (window.Touch && window.TouchEvent){
 
       // Touch Events
-      this.element.addEventListener("touchstart", this.start.bind(this));
+      this.overlay.addEventListener("touchstart", this.start.bind(this));
+      document.documentElement.addEventListener("touchmove", this.renderOverlay.bind(this));
       document.documentElement.addEventListener("touchmove", this.move.bind(this));
       document.documentElement.addEventListener("touchend", this.stop.bind(this));
 
@@ -41,10 +53,7 @@ class Dragger {
 
   }
 
-  start(event) {
-
-    // Turn ON Drag
-    this.status = true;
+  updateOffset() {
 
     // Get ComputerStyle
     const computedStyle = window.getComputedStyle(this.element);
@@ -52,14 +61,47 @@ class Dragger {
     const marginLeft = parseInt(computedStyle["marginLeft"]);
     const marginTop = parseInt(computedStyle["marginTop"]);
 
-    // updates the latest position
-    this.offset = {
-      x: this.element.offsetLeft - marginLeft,
-      y: this.element.offsetTop - marginTop,
-      width: this.element.offsetWidth,
-      height: this.element.offsetHeight
-    };
+    // Set Offset Properties of the Element
+    this.offset.element.x = this.element.offsetLeft - marginLeft;
+    this.offset.element.y = this.element.offsetTop - marginTop;
+    this.offset.element.width = this.element.offsetWidth;
+    this.offset.element.height = this.element.offsetHeight;
     
+    // Set Offset Properties of the Overlay Template
+    this.offset.overlay.x = this.offset.element.x + marginLeft;
+    this.offset.overlay.y = this.offset.element.y + marginLeft;
+    this.offset.overlay.width = this.offset.element.width;
+    this.offset.overlay.height = this.offset.element.height;
+
+  }
+  
+  renderOverlay() {
+
+    if (!this.status) {
+
+      // Update Offset Properties
+      this.updateOffset();
+
+      // Apply updated Offset properties
+      this.overlay.style.left = this.offset.overlay.x + "px";
+      this.overlay.style.top = this.offset.overlay.y + "px";
+      this.overlay.style.width = this.offset.overlay.width + "px";
+      this.overlay.style.height = this.offset.overlay.height + "px";
+
+    }
+
+    // Transform Overlay Template based on the Element
+    this.overlay.style.transform = window.getComputedStyle(this.element).transform;
+
+  }
+
+  start(event) {
+
+    // Turn ON Drag
+    this.status = true;
+    
+    this.updateOffset();
+
     // considering touch events
     event = (event.type === "touchstart") ? event.targetTouches[0] : event;
 
@@ -98,43 +140,43 @@ class Dragger {
 
     const gridSize = parseInt(window.localStorage.getItem("workspace-grid-size"));
     
-    const snapX_index = Math.floor(this.offset.x / gridSize);
-    const snapY_index = Math.floor(this.offset.y / gridSize);
+    const snapX_index = Math.floor(this.offset.element.x / gridSize);
+    const snapY_index = Math.floor(this.offset.element.y / gridSize);
     
-    const snapX_remainder = this.offset.x % gridSize;
-    const snapY_remainder = this.offset.y % gridSize;
+    const snapX_remainder = this.offset.element.x % gridSize;
+    const snapY_remainder = this.offset.element.y % gridSize;
     
     const snapX = (snapX_remainder > (gridSize / 2)) ? snapX_index + 1 : snapX_index;
     const snapY = (snapY_remainder > (gridSize / 2)) ? snapY_index + 1 : snapY_index;
 
-    this.offset.x = (snapX * gridSize);
-    this.offset.y = (snapY * gridSize);
+    this.offset.element.x = (snapX * gridSize);
+    this.offset.element.y = (snapY * gridSize);
 
-    this.element.style.left = this.offset.x + "px";
-    this.element.style.top = this.offset.y + "px";
+    this.element.style.left = this.offset.element.x + "px";
+    this.element.style.top = this.offset.element.y + "px";
 
   }
 
   snapOnStop() {
     
-    if (!this.status) return undefined;
+    if (!this.status || !this.snap) return undefined;
 
     const gridSize = parseInt(window.localStorage.getItem("workspace-grid-size"));
 
-    const snapX_index = Math.floor(this.offset.x / gridSize);
-    const snapY_index = Math.floor(this.offset.y / gridSize);
+    const snapX_index = Math.floor(this.offset.element.x / gridSize);
+    const snapY_index = Math.floor(this.offset.element.y / gridSize);
     
-    const snapX_remainder = this.offset.x % gridSize;
-    const snapY_remainder = this.offset.y % gridSize;
+    const snapX_remainder = this.offset.element.x % gridSize;
+    const snapY_remainder = this.offset.element.y % gridSize;
     
     const snapX = (snapX_remainder > (gridSize / 2)) ? snapX_index + 1 : snapX_index;
     const snapY = (snapY_remainder > (gridSize / 2)) ? snapY_index + 1 : snapY_index;
 
-    this.offset.x = (snapX * gridSize);
-    this.offset.y = (snapY * gridSize);
+    this.offset.element.x = (snapX * gridSize);
+    this.offset.element.y = (snapY * gridSize);
 
-    this.element.style.left = this.offset.x + "px";
-    this.element.style.top = this.offset.y + "px";
+    this.element.style.left = this.offset.element.x + "px";
+    this.element.style.top = this.offset.element.y + "px";
 
   }
 
@@ -167,12 +209,20 @@ class Dragger {
     }
 
     // calculate the new position
-    this.offset.x += xMovement;
-    this.offset.y += yMovement;
+    this.offset.element.x += xMovement;
+    this.offset.element.y += yMovement;
+    
+    // calculate the new position
+    this.offset.overlay.x += xMovement;
+    this.offset.overlay.y += yMovement;
 
     // apply position to the element using css
-    this.element.style.left = this.offset.x + "px";
-    this.element.style.top = this.offset.y + "px";
+    this.element.style.left = this.offset.element.x + "px";
+    this.element.style.top = this.offset.element.y + "px";
+
+    // apply position to the overlay using css
+    this.overlay.style.left = this.offset.overlay.x + "px";
+    this.overlay.style.top = this.offset.overlay.y + "px";
 
     // for older browsers
     // if event.movementX is undefined
