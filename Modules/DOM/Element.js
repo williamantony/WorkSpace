@@ -4,7 +4,7 @@ class Element {
 
     if (this.constructor.name === "Element") {
 
-      this.root = null;
+      // this.root = null;
       this.element = element;
 
       this.versionHistory = {};
@@ -14,12 +14,13 @@ class Element {
 
       this.syncStyles();
       this.syncComputedStyles();
-
+/*
       this.setRoot = (root) => {
         // if this.root is not defined
         if (this.root === null)
           return this.root = root;
       };
+*/
 
     }
 

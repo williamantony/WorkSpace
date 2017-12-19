@@ -14,3 +14,6 @@ console.log(Drag);
 const Resize = new Resizer(document.getElementById("workspace-dom"));
 
 console.log(Resize);
+
+// const E = new Element(document.getElementById("workspace-dom"));
+

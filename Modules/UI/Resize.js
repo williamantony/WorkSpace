@@ -273,10 +273,15 @@ class Resizer {
     this.overlay.style.height = this.layer.offset.height + "px";
     
 
+    // Get ComputerStyle
+    const computedStyle = window.getComputedStyle(this.element);
+    // Get Margin Left & Margin Top
+    const marginLeft = parseInt(computedStyle["marginLeft"]);
+    const marginTop = parseInt(computedStyle["marginTop"]);
 
     // update position of the element
-    this.element.style.left = this.offset.x + "px";
-    this.element.style.top = this.offset.y + "px";
+    this.element.style.left = (this.offset.x - marginLeft) + "px";
+    this.element.style.top = (this.offset.y - marginTop) + "px";
 
     // update width/height of the element
     this.element.style.width = this.offset.width + "px";
