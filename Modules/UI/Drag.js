@@ -1,238 +1,381 @@
 class Dragger {
 
-  constructor(element) {
+  constructor(element, handle, handleStyle) {
 
-    // Element on which Drag is applied
-    this.element = element || null;
+    this.element = element;
+    
+    this.boundary = document.documentElement;
 
-    // Snap Switch
-    this.snap = false;
+    this.setHandle(handle, handleStyle);
 
-    // Initialize
     this.init();
 
   }
 
   init() {
-    // Initialize
 
-    // switch for drag
+    // On / Off
+    this.isEnabled = true;
+
+    // Drag Status
     this.status = false;
 
-    // the overlay template element
-    this.overlay = document.getElementById("workspace-drag-handle");
+    this.vertical = true;
+    this.horizontal = true;
 
-    // manages offset properties
-    this.offset = {
-      element: {},
-      overlay: {}
-    }
+    this.events = {
+      onMouseDown: this.start.bind(this),
+      onMouseUp: this.stop.bind(this),
+      onMouseMove: this.move.bind(this),
+    };
 
-    // AddEventListeners
-    this.applyEvents();
+    // Data Object
+    this._data = {};
 
-  }
+    // Functions
+    this._method = {};
 
-  applyEvents() {
+    this.createMethods();
 
-    // Mouse Events
-    this.overlay.addEventListener("mousedown", this.start.bind(this));
-    document.documentElement.addEventListener("mousemove", this.renderOverlay.bind(this));
-    document.documentElement.addEventListener("mousemove", this.move.bind(this));
-    document.documentElement.addEventListener("mouseup", this.stop.bind(this));
+    this._method.syncOffset();
 
-    if (window.Touch && window.TouchEvent){
+    this.setEvents('init');
 
-      // Touch Events
-      this.overlay.addEventListener("touchstart", this.start.bind(this));
-      document.documentElement.addEventListener("touchmove", this.renderOverlay.bind(this));
-      document.documentElement.addEventListener("touchmove", this.move.bind(this));
-      document.documentElement.addEventListener("touchend", this.stop.bind(this));
-
-    }
 
   }
 
-  updateOffset() {
+  setHandle(handle, handleStyle = {}) {
 
-    // Get ComputerStyle
-    const computedStyle = window.getComputedStyle(this.element);
-    // Get Margin Left & Margin Top    
-    const marginLeft = parseInt(computedStyle["marginLeft"]);
-    const marginTop = parseInt(computedStyle["marginTop"]);
+    const defaultHandleStyle = {
+      position: 'fixed',
+      top: '0px',
+      left: '0px',
+      width: '0px',
+      height: '0px',
+      boxShadow: 'inset 0px 0px 0px 5px #ffc000',
+    };
 
-    // Set Offset Properties of the Element
-    this.offset.element.x = this.element.offsetLeft - marginLeft;
-    this.offset.element.y = this.element.offsetTop - marginTop;
-    this.offset.element.width = this.element.offsetWidth;
-    this.offset.element.height = this.element.offsetHeight;
-    
-    // Set Offset Properties of the Overlay Template
-    this.offset.overlay.x = this.offset.element.x + marginLeft;
-    this.offset.overlay.y = this.offset.element.y + marginLeft;
-    this.offset.overlay.width = this.offset.element.width;
-    this.offset.overlay.height = this.offset.element.height;
+    if (handle === true) {
 
-  }
-  
-  renderOverlay() {
+      const handleElement = document.createElement('div');
 
-    if (!this.status) {
+      if (typeof handleStyle === 'string')
+        handleElement.className = handleStyle;
 
-      // Update Offset Properties
-      this.updateOffset();
+      else if (typeof handleStyle === 'object')
+        Object.assign(handleElement.style, handleStyle, defaultHandleStyle);
+      
+      this.handle = handleElement;
 
-      // Apply updated Offset properties
-      this.overlay.style.left = this.offset.overlay.x + "px";
-      this.overlay.style.top = this.offset.overlay.y + "px";
-      this.overlay.style.width = this.offset.overlay.width + "px";
-      this.overlay.style.height = this.offset.overlay.height + "px";
+      document.documentElement.appendChild(this.handle);
 
     }
+    else if (handle !== false) {
 
-    // Transform Overlay Template based on the Element
-    this.overlay.style.transform = window.getComputedStyle(this.element).transform;
+      if (typeof handle === 'object')
+        this.handle = handle;
+
+      else this.setHandle(true, handleStyle);
+
+    }
+    else this.handle = this.element;
 
   }
 
-  start(event) {
+  setEvents(type) {
 
-    // Turn ON Drag
-    this.status = true;
-    
-    this.updateOffset();
+    if (type === 'init')
+      this.handle.addEventListener('mousedown', this.events.onMouseDown);
+      
+    else if (type === 'add' || type === 'remove') {
+      document.documentElement[`${ type }EventListener`]('mousemove', this.events.onMouseMove);
+      document.documentElement[`${ type }EventListener`]('mouseup', this.events.onMouseUp);
+    }
 
-    // considering touch events
-    event = (event.type === "touchstart") ? event.targetTouches[0] : event;
+    if ('ontouchstart' in window) {
 
-    // for older browsers
-    // if event.movementX is undefined
-    if (event.movementX === undefined){
+      if (type === 'init')
+        this.handle.addEventListener('touchstart', this.events.onMouseDown);
 
-      // updates the changes in movement
-      this.delta = {
-        x: event.pageX,
-        y: event.pageY
+      else if (type === 'add' || type === 'remove') {
+        document.documentElement[`${ type }EventListener`]('touchmove', this.events.onMouseMove);
+        document.documentElement[`${ type }EventListener`]('touchend', this.events.onMouseUp);
       }
 
     }
-
-    // Hide Scroll Bars
-    document.documentElement.style.overflow = "hidden";
-
+      
   }
 
-  stop() {
+  createMethods() {
 
-    this.snapOnStop();
+    this._method.getElementOffset = (element) => {
+      
+      return element.getBoundingClientRect();
 
-    // Turn OFF Drag
-    this.status = false;
+    };
+
+    this._method.setCursorPosition = (event) => {
+
+      const pageOffset = this._method.getEventPageOffset(event);
+
+      this._data.cursor = {
+        x: pageOffset.x,
+        y: pageOffset.y,
+        originX: pageOffset.x,
+        originY: pageOffset.y,
+      };
+
+    };
+
+    this._method.updateCursorPosition = (event) => {
+
+      const pageOffset = this._method.getEventPageOffset(event);
+
+      this._data.cursor.x = pageOffset.x;
+      this._data.cursor.y = pageOffset.y;
+
+    };
+
+    this._method.getEventPageOffset = (event) => {
+
+      const pageOffset = {
+        x: event.pageX,
+        y: event.pageY,
+      };
+
+      if (pageOffset.x === undefined) {
+        const scrollOffset = this._method.getScrollOffset();
+
+        pageOffset.x = event.clientX + scrollOffset.x;
+        pageOffset.y = event.clientY + scrollOffset.y;
+      }
+
+      return pageOffset;
+
+    };
+
+    this._method.getMovement = (event) => {
+
+      const movement = {
+        x: event.movementX,
+        y: event.movementY,
+      };
+
+      if (movement.x === undefined) {
+        const pageOffset = this._method.getEventPageOffset(event);
+        
+        movement.x = parseInt(pageOffset.x - this._data.cursor.x);
+        movement.y = parseInt(pageOffset.y - this._data.cursor.y);
+      }
+      
+      return movement;
+
+    };
+
+    this._method.getScrollOffset = () => {
+
+      const scrollOffset = {
+        x: document.documentElement.scrollLeft,
+        y: document.documentElement.scrollTop,
+      };
+
+      const nodeList = Array.from(document.querySelectorAll('*'));
+      const bodyIndex = nodeList.indexOf(document.body);
+      const elementIndex = nodeList.indexOf(this.element);
+      
+      const shortList = nodeList.slice(bodyIndex, elementIndex);
+      
+      for (let i = 0; i < shortList.length; i++) {
+
+        scrollOffset.x += parseInt(shortList[i].scrollLeft);
+        scrollOffset.y += parseInt(shortList[i].scrollTop);
+
+      }
+      
+      return scrollOffset;
+
+    };
+
+    this._method.syncOffset = () => {
+
+      if (this._data.offset === undefined){
+        this._data.offset = {
+          element: {},
+          handle: {},
+        };
+      }
+
+      const computedStyle = window.getComputedStyle(this.element);
+      
+      // from getBoundingClientRect();
+      const elementOffset = this._method.getElementOffset(this.element);
+
+      this._data.offset.element.x = this.element.offsetLeft - parseInt(computedStyle["marginLeft"]);
+      this._data.offset.element.y = this.element.offsetTop - parseInt(computedStyle["marginTop"]);
+      this._data.offset.element.width = elementOffset.width;
+      this._data.offset.element.height = elementOffset.height;
+
+      this._data.offset.handle.x = elementOffset.left;
+      this._data.offset.handle.y = elementOffset.top;
+      this._data.offset.handle.width = elementOffset.width;
+      this._data.offset.handle.height = elementOffset.height;
+      
+      // Range of Element
+      this._data.offset.element.minX = - parseInt(computedStyle["marginLeft"]);
+      this._data.offset.element.minY = - parseInt(computedStyle["marginTop"]);
+      this._data.offset.element.maxX = this.boundary.clientWidth - this.element.offsetWidth - parseInt(computedStyle["marginRight"]);
+      this._data.offset.element.maxY = this.boundary.clientHeight - this.element.offsetHeight - parseInt(computedStyle["marginBottom"]);
+
+      // Range of Handle
+      this._data.offset.handle.minX = 0;
+      this._data.offset.handle.minY = 0;
+      this._data.offset.handle.maxX = this.boundary.clientWidth - this.element.offsetWidth;
+      this._data.offset.handle.maxY = this.boundary.clientHeight - this.element.offsetHeight;
+
+      this._method.updateHandle();
+
+    };
+
+    this._method.updateOffset = (movement) => {
+
+      this._method.syncOffset();
+
+      this._data.offset.element.x += movement.x;
+      this._data.offset.element.y += movement.y;
+
+      this._data.offset.handle.x += movement.x;
+      this._data.offset.handle.y += movement.y;
+
+    };
+    
+    this._method.updateElement = () => {
+
+      const element = this._data.offset.element;
+      
+      element.x = (element.x < element.minX) ? element.minX : (element.x > element.maxX) ? element.maxX : element.x;
+      element.y = (element.y < element.minY) ? element.minY : (element.y > element.maxY) ? element.maxY : element.y;
+      
+
+      if (this.horizontal)
+        this.element.style.left = element.x + 'px';
+
+      if (this.vertical)
+        this.element.style.top = element.y + 'px';
+
+    };
+
+    this._method.updateHandle = () => {
+
+      if (this.handle === this.element) return undefined;
+
+      const handle = this._data.offset.handle;
+      
+      handle.x = (handle.x < handle.minX) ? handle.minX : (handle.x > handle.maxX) ? handle.maxX : handle.x;
+      handle.y = (handle.y < handle.minY) ? handle.minY : (handle.y > handle.maxY) ? handle.maxY : handle.y;
+
+      if (this.horizontal)
+        this.handle.style.left = handle.x + 'px';
+
+      if (this.vertical)
+        this.handle.style.top = handle.y + 'px';
+
+      this.handle.style.width = handle.width + 'px';
+      this.handle.style.height = handle.height + 'px';
+
+      this.handle.style.transform = window.getComputedStyle(this.element)["transform"];
+      this.handle.style.zIndex = window.getComputedStyle(this.element)["zIndex"];
+
+    };
+
+    this._method.treatEvent = (event) => {
+
+      if (event.type === "mousemove") {
+        
+        event.preventDefault();  
+        // Check if mouse is pressed
+        // event.buttons will return 1, if mouse is left-clicked
+        if (event.buttons !== 1) {
+          // Turn off Resizing
+          this.stop();
+        }
+  
+      }
+      
+      event = (event.type.includes('touch')) ? event.targetTouches[0] : event;
+
+      return event;
+
+    };
+
+  }
+  
+
+
+  enable() {
+    this.isEnabled = true;
+  }
+
+  disable() {
+    this.isEnabled = false;
+  }
+  
+
+
+  start(event) {
+    
+    if (!this.isEnabled) return undefined;
+
+    this.status = true;
+
+    this.setEvents('add');
+    
+    event = this._method.treatEvent(event);
+
+    this._method.syncOffset();
+
+    this._method.setCursorPosition(event);
 
     // Auto Scroll Bars
-    document.documentElement.style.overflow = "auto";
+    document.documentElement.style.overflow = 'hidden';
+    
+    if (typeof this.onDragMove === 'function')
+      this.onDragStart();
 
   }
 
-  snapOnStopbackup() {
+  stop(event) {
+        
+    this.status = false;
     
-    if (!this.status) return undefined;
+    this.setEvents('remove');
 
-    const gridSize = parseInt(window.localStorage.getItem("workspace-grid-size"));
+    // Auto Scroll Bars
+    document.documentElement.style.overflow = 'auto';
     
-    const snapX_index = Math.floor(this.offset.element.x / gridSize);
-    const snapY_index = Math.floor(this.offset.element.y / gridSize);
-    
-    const snapX_remainder = this.offset.element.x % gridSize;
-    const snapY_remainder = this.offset.element.y % gridSize;
-    
-    const snapX = (snapX_remainder > (gridSize / 2)) ? snapX_index + 1 : snapX_index;
-    const snapY = (snapY_remainder > (gridSize / 2)) ? snapY_index + 1 : snapY_index;
-
-    this.offset.element.x = (snapX * gridSize);
-    this.offset.element.y = (snapY * gridSize);
-
-    this.element.style.left = this.offset.element.x + "px";
-    this.element.style.top = this.offset.element.y + "px";
-
-  }
-
-  snapOnStop() {
-    
-    if (!this.status || !this.snap) return undefined;
-
-    const gridSize = parseInt(window.localStorage.getItem("workspace-grid-size"));
-
-    const snapX_index = Math.floor(this.offset.element.x / gridSize);
-    const snapY_index = Math.floor(this.offset.element.y / gridSize);
-    
-    const snapX_remainder = this.offset.element.x % gridSize;
-    const snapY_remainder = this.offset.element.y % gridSize;
-    
-    const snapX = (snapX_remainder > (gridSize / 2)) ? snapX_index + 1 : snapX_index;
-    const snapY = (snapY_remainder > (gridSize / 2)) ? snapY_index + 1 : snapY_index;
-
-    this.offset.element.x = (snapX * gridSize);
-    this.offset.element.y = (snapY * gridSize);
-
-    this.element.style.left = this.offset.element.x + "px";
-    this.element.style.top = this.offset.element.y + "px";
+    if (typeof this.onDragMove === 'function')
+      this.onDragEnd();
 
   }
 
   move(event) {
-
-    // if drag is turned Off
-    if (!this.status) {
-
-      // exit by returning undefined
-      return undefined;
-      
-    }
-
-    // considering touch events
-    event = (event.type === "touchmove") ? event.targetTouches[0] : event;
-
-    // for newer browsers
-    // where event.movementX is available
-    let xMovement = event.movementX;
-    let yMovement = event.movementY;
-
-    // for older browsers
-    // if event.movementX is undefined
-    if (event.movementX === undefined) {
-
-      // Calculate the change in movement
-      xMovement = (event.pageX - this.delta.x);
-      yMovement = (event.pageY - this.delta.y);
-      
-    }
-
-    // calculate the new position
-    this.offset.element.x += xMovement;
-    this.offset.element.y += yMovement;
     
-    // calculate the new position
-    this.offset.overlay.x += xMovement;
-    this.offset.overlay.y += yMovement;
+    if (!this.isEnabled) return undefined;
+    if (!this.status) return undefined;
+    
+    event = this._method.treatEvent(event);
+    
+    const movement = this._method.getMovement(event);
+    
+    this._method.updateOffset(movement);
 
-    // apply position to the element using css
-    this.element.style.left = this.offset.element.x + "px";
-    this.element.style.top = this.offset.element.y + "px";
+    this._method.updateElement();
+    
+    this._method.updateHandle();
+    
+    this._method.updateCursorPosition(event);
 
-    // apply position to the overlay using css
-    this.overlay.style.left = this.offset.overlay.x + "px";
-    this.overlay.style.top = this.offset.overlay.y + "px";
-
-    // for older browsers
-    // if event.movementX is undefined
-    if (event.movementX === undefined){
-
-      // update the page X|Y
-      this.delta.x = event.pageX;
-      this.delta.y = event.pageY;
-
-    }
+    if (typeof this.onDragMove === 'function')
+      this.onDragMove();
 
   }
 
