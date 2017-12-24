@@ -116,6 +116,8 @@ class Dragger {
       this._data.cursor = {
         x: event.pageX,
         y: event.pageY,
+        initialX: event.pageX,
+        initialY: event.pageY,
       };
 
     };
@@ -159,22 +161,6 @@ class Dragger {
 
     };
 
-    this._method.getMovement = (event) => {
-
-      const movement = {
-        x: event.movementX,
-        y: event.movementY,
-      };
-
-      if (movement.x === undefined) {
-        movement.x = parseInt(event.pageX - this._data.cursor.x);
-        movement.y = parseInt(event.pageY - this._data.cursor.y);
-      }
-      
-      return movement;
-
-    };
-
     this._method.syncOffset = () => {
 
       if (this._data.offset === undefined){
@@ -201,25 +187,37 @@ class Dragger {
         height: elementOffset.height,
       };
 
+      Object.assign(this._data.offset.element, {
+        initialX: this._data.offset.element.x,
+        initialY: this._data.offset.element.y,
+      });
+
+      Object.assign(this._data.offset.handle, {
+        initialX: this._data.offset.handle.x,
+        initialY: this._data.offset.handle.y,
+      });
+
       this._method.setRange(computedStyle, elementOffset);
 
       this._method.updateHandle();
 
     };
 
-    this._method.updateOffset = (movement) => {
+    this._method.updateOffset = (event) => {
 
-      this._method.syncOffset();
+      const element = this._data.offset.element;
+      const handle = this._data.offset.handle;
+      const cursor = this._data.cursor;
 
-      this._data.offset.element.x += movement.x;
-      this._data.offset.element.y += movement.y;
+      this._data.offset.element.x = element.initialX + (event.pageX - cursor.initialX);
+      this._data.offset.element.y = element.initialY + (event.pageY - cursor.initialY);
 
-      this._data.offset.handle.x += movement.x;
-      this._data.offset.handle.y += movement.y;
+      this._data.offset.handle.x = handle.initialX + (event.pageX - cursor.initialX);
+      this._data.offset.handle.y = handle.initialY + (event.pageY - cursor.initialY);
 
     };
     
-    this._method.updateElement = () => {
+    this._method.updateElement = (event) => {
 
       const element = this._data.offset.element;
       
@@ -236,7 +234,7 @@ class Dragger {
 
     };
 
-    this._method.updateHandle = () => {
+    this._method.updateHandle = (event) => {
 
       if (this.handle === this.element) return undefined;
 
@@ -305,6 +303,8 @@ class Dragger {
     
     event = this._method.treatEvent(event);
     
+
+
     this._method.syncOffset();
 
     this._method.setCursorPosition(event);
@@ -336,15 +336,15 @@ class Dragger {
     
     event = this._method.treatEvent(event);
     
-    const movement = this._method.getMovement(event);
-    
-    this._method.updateOffset(movement);
 
-    this._method.updateElement();
     
-    this._method.updateHandle();
+    this._method.updateOffset(event);
+
+    this._method.updateElement(event);
     
-    this._method.updateCursorPosition(event);
+    this._method.updateHandle(event);
+    
+
 
     if (typeof this.onDragMove === 'function')
       this.onDragMove();
