@@ -23,6 +23,8 @@ class Dragger {
     this.vertical = true;
     this.horizontal = true;
 
+    this.boundary = false;
+
     this.events = {
       onMouseDown: this.start.bind(this),
       onMouseUp: this.stop.bind(this),
@@ -40,8 +42,9 @@ class Dragger {
     this._method.syncOffset();
 
     this.setEvents('init');
-
-
+    
+    this.parent.style.overflow = 'hidden';
+    
   }
 
   setHandle(handle, handleStyle = {}) {
@@ -119,8 +122,40 @@ class Dragger {
 
     this._method.updateCursorPosition = (event) => {
 
-      this._data.cursor.x = event.pageX;
-      this._data.cursor.y = event.pageY;
+      Object.assign(this._data.cursor, {
+        x: event.pageX,
+        y: event.pageY,
+      });
+
+    };
+
+    this._method.setRange = (computedStyle, elementOffset) => {
+      /*
+        We are passing `computedStyle` & `elementOffset`
+        so that it don't have to calculate those values again
+        for performance boost
+      */
+
+      computedStyle = computedStyle || window.getComputedStyle(this.element);
+      elementOffset = elementOffset || this.element.getBoundingClientRect();
+
+      const range = {
+        element: {
+          minX: 0 - parseInt(computedStyle["marginLeft"]),
+          minY: 0 - parseInt(computedStyle["marginTop"]),
+          maxX: this.parent.clientWidth - elementOffset.width - parseInt(computedStyle["marginRight"]),
+          maxY: this.parent.clientHeight - elementOffset.height - parseInt(computedStyle["marginBottom"]),
+        },
+        handle: {
+          minX: 0,
+          minY: 0,
+          maxX: this.parent.clientWidth - elementOffset.width,
+          maxY: this.parent.clientHeight - elementOffset.height,
+        }
+      };
+
+      Object.assign(this._data.offset.element, range.element);
+      Object.assign(this._data.offset.handle, range.handle);
 
     };
 
@@ -150,34 +185,23 @@ class Dragger {
       }
 
       const computedStyle = window.getComputedStyle(this.element);
-      
       const elementOffset = this.element.getBoundingClientRect();
 
       this._data.offset.element = {
         x: elementOffset.left - parseInt(computedStyle["marginLeft"]),
         y: elementOffset.top - parseInt(computedStyle["marginTop"]),
-
         width: elementOffset.width,
         height: elementOffset.height,
-
-        minX: 0 - parseInt(computedStyle["marginLeft"]),
-        minY: 0 - parseInt(computedStyle["marginTop"]),
-        maxX: this.parent.clientWidth - elementOffset.width - parseInt(computedStyle["marginRight"]),
-        maxY: this.parent.clientHeight - elementOffset.height - parseInt(computedStyle["marginBottom"]),
       };
       
       this._data.offset.handle = {
         x: elementOffset.left + this.parent.scrollLeft,
         y: elementOffset.top + this.parent.scrollTop,
-
         width: elementOffset.width,
         height: elementOffset.height,
-        
-        minX: 0,
-        minY: 0,
-        maxX: this.parent.clientWidth - elementOffset.width,
-        maxY: this.parent.clientHeight - elementOffset.height,
       };
+
+      this._method.setRange(computedStyle, elementOffset);
 
       this._method.updateHandle();
 
@@ -199,9 +223,11 @@ class Dragger {
 
       const element = this._data.offset.element;
       
-      element.x = (element.x < element.minX) ? element.minX : (element.x > element.maxX) ? element.maxX : element.x;
-      element.y = (element.y < element.minY) ? element.minY : (element.y > element.maxY) ? element.maxY : element.y;
-      
+      if (this.boundary) {
+        element.x = (element.x < element.minX) ? element.minX : (element.x > element.maxX) ? element.maxX : element.x;
+        element.y = (element.y < element.minY) ? element.minY : (element.y > element.maxY) ? element.maxY : element.y;
+      }
+
       if (this.horizontal)
         this.element.style.left = element.x + 'px';
         
@@ -215,10 +241,12 @@ class Dragger {
       if (this.handle === this.element) return undefined;
 
       const handle = this._data.offset.handle;
-      
-      handle.x = (handle.x < handle.minX) ? handle.minX : (handle.x > handle.maxX) ? handle.maxX : handle.x;
-      handle.y = (handle.y < handle.minY) ? handle.minY : (handle.y > handle.maxY) ? handle.maxY : handle.y;
-      
+
+      if (this.boundary) {
+        handle.x = (handle.x < handle.minX) ? handle.minX : (handle.x > handle.maxX) ? handle.maxX : handle.x;
+        handle.y = (handle.y < handle.minY) ? handle.minY : (handle.y > handle.maxY) ? handle.maxY : handle.y;
+      }
+
       if (this.horizontal)
         this.handle.style.left = handle.x + 'px';
         
@@ -276,13 +304,12 @@ class Dragger {
     this.setEvents('add');
     
     event = this._method.treatEvent(event);
-
+    
     this._method.syncOffset();
 
     this._method.setCursorPosition(event);
+    
 
-    // Auto Scroll Bars
-    document.documentElement.style.overflow = 'hidden';
     
     if (typeof this.onDragMove === 'function')
       this.onDragStart();
@@ -294,9 +321,8 @@ class Dragger {
     this.status = false;
     
     this.setEvents('remove');
-
-    // Auto Scroll Bars
-    document.documentElement.style.overflow = 'auto';
+    
+    
     
     if (typeof this.onDragMove === 'function')
       this.onDragEnd();
