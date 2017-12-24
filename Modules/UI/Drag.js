@@ -1,10 +1,10 @@
 class Dragger {
 
-  constructor(element, handle, handleStyle) {
+  constructor(element, handle, handleStyle, parent) {
 
     this.element = element;
     
-    this.boundary = document.documentElement;
+    this.parent = parent || document.documentElement;
 
     this.setHandle(handle, handleStyle);
 
@@ -47,7 +47,7 @@ class Dragger {
   setHandle(handle, handleStyle = {}) {
 
     const defaultHandleStyle = {
-      position: 'fixed',
+      position: 'absolute',
       top: '0px',
       left: '0px',
       width: '0px',
@@ -67,7 +67,7 @@ class Dragger {
       
       this.handle = handleElement;
 
-      document.documentElement.appendChild(this.handle);
+      this.parent.appendChild(this.handle);
 
     }
     else if (handle !== false) {
@@ -108,49 +108,19 @@ class Dragger {
 
   createMethods() {
 
-    this._method.getElementOffset = (element) => {
-      
-      return element.getBoundingClientRect();
-
-    };
-
     this._method.setCursorPosition = (event) => {
-
-      const pageOffset = this._method.getEventPageOffset(event);
-
+      
       this._data.cursor = {
-        x: pageOffset.x,
-        y: pageOffset.y,
-        originX: pageOffset.x,
-        originY: pageOffset.y,
+        x: event.pageX,
+        y: event.pageY,
       };
 
     };
 
     this._method.updateCursorPosition = (event) => {
 
-      const pageOffset = this._method.getEventPageOffset(event);
-
-      this._data.cursor.x = pageOffset.x;
-      this._data.cursor.y = pageOffset.y;
-
-    };
-
-    this._method.getEventPageOffset = (event) => {
-
-      const pageOffset = {
-        x: event.pageX,
-        y: event.pageY,
-      };
-
-      if (pageOffset.x === undefined) {
-        const scrollOffset = this._method.getScrollOffset();
-
-        pageOffset.x = event.clientX + scrollOffset.x;
-        pageOffset.y = event.clientY + scrollOffset.y;
-      }
-
-      return pageOffset;
+      this._data.cursor.x = event.pageX;
+      this._data.cursor.y = event.pageY;
 
     };
 
@@ -162,37 +132,11 @@ class Dragger {
       };
 
       if (movement.x === undefined) {
-        const pageOffset = this._method.getEventPageOffset(event);
-        
-        movement.x = parseInt(pageOffset.x - this._data.cursor.x);
-        movement.y = parseInt(pageOffset.y - this._data.cursor.y);
+        movement.x = parseInt(event.pageX - this._data.cursor.x);
+        movement.y = parseInt(event.pageY - this._data.cursor.y);
       }
       
       return movement;
-
-    };
-
-    this._method.getScrollOffset = () => {
-
-      const scrollOffset = {
-        x: document.documentElement.scrollLeft,
-        y: document.documentElement.scrollTop,
-      };
-
-      const nodeList = Array.from(document.querySelectorAll('*'));
-      const bodyIndex = nodeList.indexOf(document.body);
-      const elementIndex = nodeList.indexOf(this.element);
-      
-      const shortList = nodeList.slice(bodyIndex, elementIndex);
-      
-      for (let i = 0; i < shortList.length; i++) {
-
-        scrollOffset.x += parseInt(shortList[i].scrollLeft);
-        scrollOffset.y += parseInt(shortList[i].scrollTop);
-
-      }
-      
-      return scrollOffset;
 
     };
 
@@ -207,30 +151,33 @@ class Dragger {
 
       const computedStyle = window.getComputedStyle(this.element);
       
-      // from getBoundingClientRect();
-      const elementOffset = this._method.getElementOffset(this.element);
+      const elementOffset = this.element.getBoundingClientRect();
 
-      this._data.offset.element.x = this.element.offsetLeft - parseInt(computedStyle["marginLeft"]);
-      this._data.offset.element.y = this.element.offsetTop - parseInt(computedStyle["marginTop"]);
-      this._data.offset.element.width = elementOffset.width;
-      this._data.offset.element.height = elementOffset.height;
+      this._data.offset.element = {
+        x: elementOffset.left - parseInt(computedStyle["marginLeft"]),
+        y: elementOffset.top - parseInt(computedStyle["marginTop"]),
 
-      this._data.offset.handle.x = elementOffset.left;
-      this._data.offset.handle.y = elementOffset.top;
-      this._data.offset.handle.width = elementOffset.width;
-      this._data.offset.handle.height = elementOffset.height;
+        width: elementOffset.width,
+        height: elementOffset.height,
+
+        minX: 0 - parseInt(computedStyle["marginLeft"]),
+        minY: 0 - parseInt(computedStyle["marginTop"]),
+        maxX: this.parent.clientWidth - elementOffset.width - parseInt(computedStyle["marginRight"]),
+        maxY: this.parent.clientHeight - elementOffset.height - parseInt(computedStyle["marginBottom"]),
+      };
       
-      // Range of Element
-      this._data.offset.element.minX = - parseInt(computedStyle["marginLeft"]);
-      this._data.offset.element.minY = - parseInt(computedStyle["marginTop"]);
-      this._data.offset.element.maxX = this.boundary.clientWidth - this.element.offsetWidth - parseInt(computedStyle["marginRight"]);
-      this._data.offset.element.maxY = this.boundary.clientHeight - this.element.offsetHeight - parseInt(computedStyle["marginBottom"]);
+      this._data.offset.handle = {
+        x: elementOffset.left + this.parent.scrollLeft,
+        y: elementOffset.top + this.parent.scrollTop,
 
-      // Range of Handle
-      this._data.offset.handle.minX = 0;
-      this._data.offset.handle.minY = 0;
-      this._data.offset.handle.maxX = this.boundary.clientWidth - this.element.offsetWidth;
-      this._data.offset.handle.maxY = this.boundary.clientHeight - this.element.offsetHeight;
+        width: elementOffset.width,
+        height: elementOffset.height,
+        
+        minX: 0,
+        minY: 0,
+        maxX: this.parent.clientWidth - elementOffset.width,
+        maxY: this.parent.clientHeight - elementOffset.height,
+      };
 
       this._method.updateHandle();
 
@@ -255,10 +202,9 @@ class Dragger {
       element.x = (element.x < element.minX) ? element.minX : (element.x > element.maxX) ? element.maxX : element.x;
       element.y = (element.y < element.minY) ? element.minY : (element.y > element.maxY) ? element.maxY : element.y;
       
-
       if (this.horizontal)
         this.element.style.left = element.x + 'px';
-
+        
       if (this.vertical)
         this.element.style.top = element.y + 'px';
 
@@ -272,10 +218,10 @@ class Dragger {
       
       handle.x = (handle.x < handle.minX) ? handle.minX : (handle.x > handle.maxX) ? handle.maxX : handle.x;
       handle.y = (handle.y < handle.minY) ? handle.minY : (handle.y > handle.maxY) ? handle.maxY : handle.y;
-
+      
       if (this.horizontal)
         this.handle.style.left = handle.x + 'px';
-
+        
       if (this.vertical)
         this.handle.style.top = handle.y + 'px';
 
